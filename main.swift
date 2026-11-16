@@ -36,7 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let container = NSView()
         container.wantsLayer = true
-        container.layer?.backgroundColor = NSColor.clear.cgColor  // без заливки, видны только цифры и кнопки
+        container.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.01).cgColor  // заливка 1%
         container.layer?.cornerRadius = 28
         panel.contentView = container
 
