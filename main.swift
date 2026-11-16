@@ -1,10 +1,9 @@
 import AppKit
 
 // Помодоро: большой таймер поверх всех окон и полноэкранных приложений.
-let workSec = 25 * 60
-let breakSec = 5 * 60
-let longBreakSec = 15 * 60
 let cyclesBeforeLong = 4
+// Режимы в минутах: (фокус, короткий перерыв, длинный перерыв)
+let modes: [(work: Int, short: Int, long: Int)] = [(25, 5, 15), (45, 10, 20), (60, 15, 25)]
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let panel = NSPanel(
@@ -14,12 +13,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let phaseLabel = NSTextField(labelWithString: "")
     let timeLabel = NSTextField(labelWithString: "")
     let toggleButton = NSButton(title: "Старт", target: nil, action: nil)
+    let modeButton = NSButton(title: "25 мин", target: nil, action: nil)
     var ticker: Timer?
 
     var phaseIsWork = true
     var breakLong = false
     var completed = 0
-    var remaining: TimeInterval = TimeInterval(workSec)
+    var remaining: TimeInterval = TimeInterval(modes[0].work * 60)
+    var modeIndex = 0
+    let digitAlpha: CGFloat = 0.1  // прозрачность цифр таймера: 0 невидимо, 1 сплошные
     var endDate: Date?  // nil = на паузе или не запущен
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -27,28 +29,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        panel.hasShadow = true
+        panel.hasShadow = false  // тень рисовала бы контур прозрачного окна
         panel.isMovableByWindowBackground = true  // перетаскивать можно за любое место
         panel.hidesOnDeactivate = false
         panel.isReleasedWhenClosed = false
 
         let container = NSView()
         container.wantsLayer = true
-        container.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.85).cgColor
+        container.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.04).cgColor  // почти прозрачная заливка
+        container.layer?.borderColor = NSColor.white.withAlphaComponent(0.08).cgColor  // тонкая рамка
+        container.layer?.borderWidth = 1
         container.layer?.cornerRadius = 28
         panel.contentView = container
 
         phaseLabel.font = .systemFont(ofSize: 26, weight: .semibold)
         timeLabel.font = .monospacedDigitSystemFont(ofSize: 140, weight: .bold)
-        timeLabel.textColor = .white
+        timeLabel.textColor = NSColor.white.withAlphaComponent(digitAlpha)
         timeLabel.alignment = .center
 
         toggleButton.target = self
         toggleButton.action = #selector(toggle)
+        modeButton.target = self
+        modeButton.action = #selector(cycleMode)
         let skip = NSButton(title: "Дальше", target: self, action: #selector(skipPhase))
         let reset = NSButton(title: "Сброс", target: self, action: #selector(resetPhase))
         let quit = NSButton(title: "Выход", target: NSApp, action: #selector(NSApplication.terminate(_:)))
-        let buttons = NSStackView(views: [toggleButton, reset, skip, quit])
+        let buttons = NSStackView(views: [modeButton, toggleButton, reset, skip, quit])
         buttons.spacing = 10
 
         let stack = NSStackView(views: [phaseLabel, timeLabel, buttons])
@@ -98,6 +104,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         nextPhase(sound: false)
     }
 
+    @objc func cycleMode() {
+        modeIndex = (modeIndex + 1) % modes.count
+        phaseIsWork = true
+        breakLong = false
+        endDate = nil
+        remaining = TimeInterval(duration())
+        refresh()
+    }
+
     @objc func resetPhase() {
         endDate = nil
         remaining = TimeInterval(duration())
@@ -105,8 +120,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func duration() -> Int {
-        if phaseIsWork { return workSec }
-        return breakLong ? longBreakSec : breakSec
+        let m = modes[modeIndex]
+        if phaseIsWork { return m.work * 60 }
+        return (breakLong ? m.long : m.short) * 60
     }
 
     func nextPhase(sound: Bool) {
@@ -142,6 +158,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         phaseLabel.textColor = color
         toggleButton.title = endDate == nil ? "Старт" : "Пауза"
+        modeButton.title = "\(modes[modeIndex].work) мин"
         showTime(endDate.map { max(0, $0.timeIntervalSinceNow) } ?? remaining)
     }
 }
