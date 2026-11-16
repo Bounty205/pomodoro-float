@@ -21,7 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var completed = 0
     var remaining: TimeInterval = TimeInterval(modes[0].work * 60)
     var modeIndex = 0
-    let digitAlpha: CGFloat = 0.1  // прозрачность цифр таймера: 0 невидимо, 1 сплошные
+    let digitAlpha: CGFloat = 0.6  // непрозрачность цифр таймера: 0 невидимо, 1 сплошные
     var endDate: Date?  // nil = на паузе или не запущен
 
     func applicationDidFinishLaunching(_ notification: Notification) {
