@@ -37,8 +37,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let container = NSView()
         container.wantsLayer = true
         container.layer?.backgroundColor = NSColor.white.withAlphaComponent(0.04).cgColor  // почти прозрачная заливка
-        container.layer?.borderColor = NSColor.white.withAlphaComponent(0.08).cgColor  // тонкая рамка
-        container.layer?.borderWidth = 1
         container.layer?.cornerRadius = 28
         panel.contentView = container
 
